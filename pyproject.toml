@@ -1,0 +1,12 @@
+[project]
+name = "muse-upscale-advanced"
+description = "Advanced upscale-model node — load model, tiled/OOM-safe upscale, resize to an exact target resolution (multiplier or fixed). No third-party dependency beyond ComfyUI core."
+version = "1.0.0"
+
+[project.urls]
+Repository = "https://github.com/muse-collective-26/Muse-Upscale-Advanced"
+
+[tool.comfy]
+PublisherId = "muse-collective"
+DisplayName = "Muse Upscale Advanced"
+Icon = ""
