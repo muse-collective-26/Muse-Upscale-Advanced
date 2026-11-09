@@ -256,27 +256,20 @@ class MuseUpscaleModelAdv:
 
         try:
             image_batches = torch.split(image, batch_size)
-            processed_batches = [
-                self._run_upscale(upscale_model, batch, dtype, device, tile_size_px)
-                for batch in image_batches
-            ]
+            processed_batches = []
+            for batch in image_batches:
+                upscaled = self._run_upscale(upscale_model, batch, dtype, device, tile_size_px)
+                if upscaled.shape[1] != target_h or upscaled.shape[2] != target_w:
+                    upscaled = comfy.utils.lanczos(
+                        upscaled.permute(0, 3, 1, 2), target_w, target_h
+                    ).permute(0, 2, 3, 1)
+                processed_batches.append(upscaled)
             full_upscaled = torch.cat(processed_batches, dim=0)
         finally:
             if offload_model:
                 upscale_model.patcher.model.to(offload_device)
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
-
-        current_h, current_w = full_upscaled.shape[1], full_upscaled.shape[2]
-        if current_h != target_h or current_w != target_w:
-            log.info("[MuseUpscaleAdvanced] Model output %dx%d != target %dx%d — resizing (Lanczos).",
-                     current_w, current_h, target_w, target_h)
-            full_upscaled = comfy.utils.lanczos(
-                full_upscaled.permute(0, 3, 1, 2), target_w, target_h
-            ).permute(0, 2, 3, 1)
-        else:
-            log.info("[MuseUpscaleAdvanced] Model output %dx%d already matches target — no resize needed.",
-                     current_w, current_h)
 
         final_result = torch.clamp(full_upscaled, 0, 1).to(image.dtype).to(image.device)
 
